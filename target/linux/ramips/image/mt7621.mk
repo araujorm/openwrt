@@ -278,6 +278,7 @@ endef
 TARGET_DEVICES += xiaomi_mir3p
 
 define Device/xiaomi_mir3g
+  $(Device/uimage-lzma-loader)
   DTS := MIR3G
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -299,6 +300,7 @@ endef
 TARGET_DEVICES += xiaomi_mir3g
 
 define Device/xiaomi_mir3g-v2
+  $(Device/uimage-lzma-loader)
   DTS := mt7621_xiaomi_mir3g-v2
   MTK_SOC := mt7621
   IMAGE_SIZE := 14848k
