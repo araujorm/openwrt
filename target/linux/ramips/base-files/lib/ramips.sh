@@ -259,6 +259,9 @@ ramips_board_detect() {
 	*"K2P")
 		name="k2p"
 		;;
+	*"LV-AC05")
+		name="pl-lvac05"
+		;;
 	*"M3")
 		name="m3"
 		;;
