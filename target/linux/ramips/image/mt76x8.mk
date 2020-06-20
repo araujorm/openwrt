@@ -93,6 +93,14 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/jw-wr758ac
+  DTS := JW-WR758AC
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Joowin WR758AC
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += jw-wr758ac
+
 define Device/LinkIt7688
   DTS := LINKIT7688
   IMAGE_SIZE := $(ralink_default_fw_size_32M)

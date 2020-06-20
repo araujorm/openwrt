@@ -610,6 +610,9 @@ ramips_board_detect() {
 	*"WR6202")
 		name="wr6202"
 		;;
+	*"WR758AC")
+		name="jw-wr758ac"
+		;;
 	*"WRH-300CR")
 		name="wrh-300cr"
 		;;
