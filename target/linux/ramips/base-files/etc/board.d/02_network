@@ -178,7 +178,8 @@ ramips_setup_interfaces()
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	alfa-network,r36m-e4g|\
-	wcr-1166ds)
+	wcr-1166ds|\
+	pl-lvac05)
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;

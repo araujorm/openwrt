@@ -168,6 +168,14 @@ define Device/pbr-d1
 endef
 TARGET_DEVICES += pbr-d1
 
+define Device/pl-lvac05
+  DTS := PL-LVAC05
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := Pix-Link LV-AC05
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += pl-lvac05
+
 define Device/rakwireless_rak633
   DTS := RAK633
   DEVICE_TITLE := Rakwireless RAK633
