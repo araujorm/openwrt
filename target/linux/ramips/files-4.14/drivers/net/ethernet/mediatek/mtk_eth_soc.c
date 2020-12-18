@@ -875,6 +875,8 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 	u8 *data, *new_data;
 	struct fe_rx_dma *rxd, trxd;
 	int done = 0, pad;
+	u32 hwidx;
+	int cnt;
 
 	if (netdev->features & NETIF_F_RXCSUM)
 		checksum_bit = soc->checksum_bit;
@@ -885,6 +887,12 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		pad = 0;
 	else
 		pad = NET_IP_ALIGN;
+
+       /* when rx count more the budget size not clear interrupt */
+       hwidx = fe_reg_r32(FE_REG_RX_DRX_IDX0);
+       cnt = ((hwidx - idx) & (ring->rx_ring_size - 1)) - 1;
+       if (cnt < budget)
+               fe_reg_w32(rx_intr, FE_REG_FE_INT_STATUS);
 
 	while (done < budget) {
 		unsigned int pktlen;
@@ -974,8 +982,7 @@ release_desc:
 	return done;
 }
 
-static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
-		      int *tx_again)
+static int fe_poll_tx(struct fe_priv *priv)
 {
 	struct net_device *netdev = priv->netdev;
 	struct device *dev = &netdev->dev;
@@ -989,7 +996,7 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 	idx = ring->tx_free_idx;
 	hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
 
-	while ((idx != hwidx) && budget) {
+	while (idx != hwidx) {
 		tx_buf = &ring->tx_buf[idx];
 		skb = tx_buf->skb;
 
@@ -999,23 +1006,11 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 		if (skb != (struct sk_buff *)DMA_DUMMY_DESC) {
 			bytes_compl += skb->len;
 			done++;
-			budget--;
 		}
 		fe_txd_unmap(dev, tx_buf);
 		idx = NEXT_TX_DESP_IDX(idx);
 	}
 	ring->tx_free_idx = idx;
-
-	if (idx == hwidx) {
-		/* read hw index again make sure no new tx packet */
-		hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
-		if (idx == hwidx)
-			fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
-		else
-			*tx_again = 1;
-	} else {
-		*tx_again = 1;
-	}
 
 	if (done) {
 		netdev_completed_queue(netdev, done, bytes_compl);
@@ -1032,7 +1027,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 {
 	struct fe_priv *priv = container_of(napi, struct fe_priv, rx_napi);
 	struct fe_hw_stats *hwstat = priv->hw_stats;
-	int tx_done, rx_done, tx_again;
+	int tx_done, rx_done;
 	u32 status, fe_status, status_reg, mask;
 	u32 tx_intr, rx_intr, status_intr;
 
@@ -1043,7 +1038,6 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	status_intr = priv->soc->status_int;
 	tx_done = 0;
 	rx_done = 0;
-	tx_again = 0;
 
 	if (fe_reg_table[FE_REG_FE_INT_STATUS2]) {
 		fe_status = fe_reg_r32(FE_REG_FE_INT_STATUS2);
@@ -1052,8 +1046,11 @@ static int fe_poll(struct napi_struct *napi, int budget)
 		status_reg = FE_REG_FE_INT_STATUS;
 	}
 
-	if (status & tx_intr)
-		tx_done = fe_poll_tx(priv, budget, tx_intr, &tx_again);
+	if (status & tx_intr) {
+            fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
+            tx_done = fe_poll_tx(priv);
+            status = fe_reg_r32(FE_REG_FE_INT_STATUS);
+	}
 
 	if (status & rx_intr)
 		rx_done = fe_poll_rx(napi, budget, priv, rx_intr);
@@ -1073,7 +1070,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 			    tx_done, rx_done, status, mask);
 	}
 
-	if (!tx_again && (rx_done < budget)) {
+	if (rx_done < budget) {
 		status = fe_reg_r32(FE_REG_FE_INT_STATUS);
 		if (status & (tx_intr | rx_intr)) {
 			/* let napi poll again */
