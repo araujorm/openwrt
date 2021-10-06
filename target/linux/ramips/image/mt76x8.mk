@@ -213,6 +213,15 @@ define Device/iptime_a604m
 endef
 TARGET_DEVICES += iptime_a604m
 
+define Device/joowin_jw-wr758ac
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Joowin
+  DEVICE_MODEL := WR758AC
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += jw-wr758ac
+endef
+TARGET_DEVICES += joowin_jw-wr758ac
+
 define Device/jotale_js76x8
   DEVICE_VENDOR := Jotale
   DEVICE_MODEL := JS76x8
